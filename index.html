@@ -1,0 +1,820 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>WHO HR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root{
+  --violet:#7C3AED; --indigo:#4F46E5; --bg:#F6F7FB; --card:#FFFFFF; --text:#111827;
+  --muted:#6B7280; --line:#E5E7EB; --danger:#EF4444; --success:#10B981; --warning:#F59E0B;
+  --info:#06B6D4; --shadow:0 18px 45px rgba(17,24,39,.08); --radius:22px;
+  --sidebar-w:284px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;overflow-x:hidden}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;outline:none;border:none;background:none}
+a{text-decoration:none;color:inherit}
+.hidden{display:none!important}
+
+/* ---------- transitions ---------- */
+.login-shell,.app-shell{transition:opacity .45s cubic-bezier(.4,0,.2,1)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes popIn{from{opacity:0;transform:scale(.94) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- login ---------- */
+.login-shell{min-height:100vh;display:grid;grid-template-columns:1.08fr .92fr;background:#fff}
+.login-art{position:relative;overflow:hidden;padding:56px;color:white;
+  background:radial-gradient(circle at 18% 20%,rgba(255,255,255,.25),transparent 22%),
+             radial-gradient(circle at 78% 70%,rgba(34,211,238,.35),transparent 28%),
+             linear-gradient(135deg,var(--violet),var(--indigo));
+  display:flex;flex-direction:column;justify-content:space-between;animation:fadeIn .6s ease}
+.brand-row{display:flex;gap:14px;align-items:center;font-family:'Sora',sans-serif;font-weight:800;font-size:28px;letter-spacing:-.04em;flex-shrink:0}
+.brand-logo{width:48px;height:48px;border-radius:16px;background:rgba(255,255,255,.18);display:grid;place-items:center;border:1px solid rgba(255,255,255,.28);box-shadow:0 24px 70px rgba(0,0,0,.15)}
+.login-art h1{font-family:'Sora',sans-serif;font-size:64px;letter-spacing:-.07em;line-height:1;max-width:720px;margin:0;animation:fadeUp .7s .1s both}
+.login-art p{max-width:580px;font-size:18px;line-height:1.7;color:rgba(255,255,255,.86);animation:fadeUp .7s .2s both}
+.glass-card{width:420px;padding:22px;border-radius:28px;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(16px);animation:fadeUp .7s .3s both}
+.glass-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.glass-stat{padding:18px;border-radius:22px;background:rgba(255,255,255,.13);transition:.25s ease}
+.glass-stat:hover{background:rgba(255,255,255,.22);transform:translateY(-3px)}
+.glass-stat b{font-family:'Sora',sans-serif;display:block;font-size:30px;letter-spacing:-.04em}
+.login-form-wrap{display:flex;align-items:center;justify-content:center;padding:40px}
+.login-form-card{width:min(430px,100%);animation:fadeUp .6s .15s both}
+.login-form-card h2{font-family:'Sora',sans-serif;font-size:38px;letter-spacing:-.06em;margin:0 0 10px}
+.login-form-card p{color:var(--muted);line-height:1.65;margin:0 0 30px}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.field label{color:#374151;font-weight:700;font-size:13px}
+.input,.select,.textarea{width:100%;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:white;outline:none;color:var(--text);transition:.18s ease}
+.textarea{min-height:92px;resize:vertical}
+.input:focus,.select:focus,.textarea:focus{border-color:var(--violet);box-shadow:0 0 0 4px rgba(124,58,237,.12)}
+.btn{border:0;border-radius:14px;padding:11px 15px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:9px;transition:.18s ease;white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}
+.btn-primary{color:white;background:linear-gradient(135deg,var(--violet),var(--indigo));box-shadow:0 14px 30px rgba(79,70,229,.25)}
+.btn-soft{color:#4338CA;background:#EEF2FF}
+.btn-danger{color:white;background:linear-gradient(135deg,#FB7185,#EF4444)}
+.btn-ghost{background:white;border:1px solid var(--line);color:#374151}
+.btn-icon{width:36px;height:36px;padding:0;border-radius:12px;flex-shrink:0}
+.btn-full{width:100%;height:48px}
+code,.mono{font-family:'JetBrains Mono',monospace}
+.spinner-box{display:inline-block;width:18px;height:18px;border:3px solid rgba(255,255,255,0.3);border-radius:50%;border-top-color:white;animation:spin .8s cubic-bezier(.4,0,.2,1) infinite}
+
+/* ---------- app shell ---------- */
+.app-shell{min-height:100vh;display:grid;grid-template-columns:var(--sidebar-w) 1fr;animation:fadeIn .5s ease}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(17,24,39,.45);backdrop-filter:blur(4px);z-index:99;opacity:0;pointer-events:none;transition:opacity .35s ease}
+.sidebar-overlay.open{opacity:1;pointer-events:auto}
+.sidebar{position:fixed;left:0;top:0;height:100vh;width:var(--sidebar-w);z-index:100;padding:24px 18px;background:linear-gradient(160deg,var(--violet),var(--indigo));color:white;display:flex;flex-direction:column;gap:24px;overflow-y:auto;transform:translateX(-102%);transition:transform .38s cubic-bezier(.16,1,.3,1);box-shadow:0 0 0 rgba(0,0,0,0)}
+.sidebar.open{transform:translateX(0);box-shadow:24px 0 60px rgba(17,24,39,.25)}
+.sidebar .brand-row{padding:10px 10px 18px;font-size:23px;justify-content:space-between}
+.sidebar-close{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,.12);transition:.2s ease}
+.sidebar-close:hover{background:rgba(255,255,255,.25);transform:rotate(90deg)}
+.nav{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+.nav-link{border:0;color:rgba(255,255,255,.84);background:transparent;border-radius:16px;padding:13px 14px;display:flex;align-items:center;gap:12px;font-weight:800;text-align:left;width:100%;transition:.22s ease;position:relative;overflow:hidden}
+.nav-link:hover{background:rgba(255,255,255,.14);transform:translateX(3px)}
+.nav-link.active{background:rgba(255,255,255,.18);color:white;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.nav-link.active::before{content:'';position:absolute;left:0;top:12%;bottom:12%;width:4px;border-radius:4px;background:white}
+.sidebar-footer{margin-top:auto;padding:16px;border-radius:20px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);flex-shrink:0}
+.sidebar-footer small{display:block;color:rgba(255,255,255,.85);line-height:1.5;margin-bottom:12px;font-size:11.5px}
+
+#logoutBtn{background:linear-gradient(135deg,rgba(239,68,68,.22),rgba(220,38,38,.32));color:#FEE2E2;border:1px solid rgba(255,255,255,.25);box-shadow:0 8px 20px rgba(239,68,68,.18) inset,0 4px 12px rgba(0,0,0,.08);position:relative;overflow:hidden;transition:.3s ease}
+#logoutBtn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#FB7185,#EF4444);opacity:0;transition:.3s ease;z-index:-1}
+#logoutBtn:hover{color:white;transform:translateY(-2px);box-shadow:0 14px 28px rgba(239,68,68,.35)}
+#logoutBtn:hover::after{opacity:1}
+
+.main{min-width:0;padding:26px;transition:.3s ease}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:24px;flex-wrap:wrap}
+.topbar-left{display:flex;align-items:center;gap:16px;min-width:0}
+
+.hamburger{display:flex;align-items:center;justify-content:center;background:white;border:1px solid var(--line);color:var(--text);width:44px;height:44px;border-radius:13px;flex-shrink:0;box-shadow:0 4px 14px rgba(17,24,39,.08);transition:.25s ease;position:relative}
+.hamburger:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(124,58,237,.18);border-color:rgba(124,58,237,.3)}
+.hamburger svg{transition:transform .3s ease}
+.hamburger.active svg{transform:rotate(90deg)}
+
+.page-title{min-width:0;animation:fadeUp .4s ease}
+.page-title h1{font-family:'Sora',sans-serif;font-size:34px;letter-spacing:-.06em;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.page-title p{margin:6px 0 0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-chip{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid var(--line);border-radius:18px;background:white;box-shadow:var(--shadow);flex-shrink:0;transition:.2s ease}
+.avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid rgba(124,58,237,.15);background:#EEF2FF;flex-shrink:0}
+.avatar-sm{width:32px;height:32px}
+.avatar-lg{width:72px;height:72px;border-radius:22px;object-fit:cover;border:1px solid var(--line)}
+
+.card{background:var(--card);border:1px solid rgba(229,231,235,.85);border-radius:var(--radius);box-shadow:var(--shadow);animation:fadeUp .35s ease}
+.stat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:18px}
+.stat-card{padding:19px;color:white;border-radius:24px;min-height:128px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;position:relative;box-shadow:0 22px 45px rgba(17,24,39,.1);transition:.25s ease}
+.stat-card:hover{transform:translateY(-4px)}
+.stat-card::after{content:'';position:absolute;width:120px;height:120px;border-radius:50%;right:-38px;top:-34px;background:rgba(255,255,255,.18)}
+.stat-card span{color:rgba(255,255,255,.82);font-weight:800;font-size:13px}
+.stat-card b{font-family:'Sora',sans-serif;font-size:32px;letter-spacing:-.06em;position:relative;z-index:1}
+.g-blue{background:linear-gradient(135deg,#2563EB,#38BDF8)}
+.g-green{background:linear-gradient(135deg,#059669,#34D399)}
+.g-orange{background:linear-gradient(135deg,#F97316,#FBBF24)}
+.g-pink{background:linear-gradient(135deg,#DB2777,#FB7185)}
+.g-cyan{background:linear-gradient(135deg,#0891B2,#22D3EE)}
+
+.dashboard-row-2{display:grid;grid-template-columns:1.25fr .9fr 1fr;gap:16px;margin-bottom:18px}
+.dashboard-row-3{display:grid;grid-template-columns:1.4fr .85fr 1fr;gap:16px;margin-bottom:18px}
+.panel{padding:20px;min-height:350px}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.panel h3{font-family:'Sora',sans-serif;margin:0;letter-spacing:-.04em}
+.panel small{color:var(--muted)}
+.chart-box{height:270px;position:relative}
+.position-list{max-height:278px;overflow:auto;padding-right:6px;display:flex;flex-direction:column;gap:10px}
+.employee-line{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--line);border-radius:16px;background:#FAFAFC;transition:.2s ease}
+.employee-line:hover{background:#F3F0FF}
+.employee-line strong{display:block;font-size:14px}
+.employee-line small{color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:900;line-height:1;white-space:nowrap}
+.pill-violet{color:#5B21B6;background:#EDE9FE}
+.pill-green{color:#047857;background:#D1FAE5}
+.pill-orange{color:#C2410C;background:#FFEDD5}
+.pill-blue{color:#1D4ED8;background:#DBEAFE}
+.pill-pink{color:#BE185D;background:#FCE7F3}
+.pill-cyan{color:#0E7490;background:#CFFAFE}
+.pill-gray{color:#4B5563;background:#F3F4F6}
+.pill-red{color:#B91C1C;background:#FEE2E2}
+.toolbar{padding:16px;display:grid;grid-template-columns:1.4fr .8fr .8fr .8fr auto;gap:12px;align-items:end;margin-bottom:16px}
+.table-card{overflow:hidden}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:980px}
+th,td{padding:14px 16px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;font-size:14px}
+th{color:#4B5563;background:#F9FAFB;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+tr:hover td{background:#FCFCFF}
+.row-actions{display:flex;gap:8px;justify-content:flex-end}
+.empty{padding:38px;text-align:center;color:var(--muted)}
+
+.modal-backdrop{position:fixed;inset:0;z-index:150;background:rgba(17,24,39,.56);display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .25s ease}
+.modal{width:min(760px,100%);max-height:92vh;overflow:auto;border-radius:26px;background:white;box-shadow:0 30px 80px rgba(0,0,0,.28);animation:popIn .28s cubic-bezier(.16,1,.3,1)}
+.modal-head,.modal-foot{padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:1px solid var(--line)}
+.modal-foot{border-bottom:0;border-top:1px solid var(--line);justify-content:flex-end;position:sticky;bottom:0;background:white;gap:10px}
+.modal-head h3{font-family:'Sora',sans-serif;margin:0;letter-spacing:-.04em}
+.modal-body{padding:22px}
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.field.full{grid-column:1/-1}
+.preview-row{display:flex;align-items:center;gap:16px;padding:14px;border:1px dashed #C4B5FD;border-radius:18px;background:#F5F3FF}
+.toast{position:fixed;right:24px;bottom:24px;z-index:200;padding:14px 16px;border-radius:16px;color:white;background:#111827;box-shadow:var(--shadow);display:flex;align-items:center;gap:10px;font-weight:800;animation:fadeUp .3s ease}
+.danger-text{color:var(--danger)}
+.muted{color:var(--muted)}
+.right{text-align:right}
+.nowrap{white-space:nowrap}
+.assigned-list{display:flex;flex-wrap:wrap;gap:7px;max-width:390px}
+
+@media (max-width:1200px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)}
+  .dashboard-row-2,.dashboard-row-3{grid-template-columns:1fr}
+  .toolbar{grid-template-columns:1fr 1fr}
+}
+.app-shell{grid-template-columns:1fr}
+.main{padding:26px}
+@media (max-width:992px){
+  .login-shell{grid-template-columns:1fr}
+  .login-art{display:none}
+}
+@media (max-width:480px){
+  .main{padding:18px 14px}
+  .page-title h1{font-size:24px}
+  .page-title p{font-size:13px}
+  .user-chip div{display:none}
+  .user-chip{padding:6px;border-radius:50%}
+  .stat-card b{font-size:28px}
+  .stat-card{min-height:110px;padding:16px}
+  .login-form-wrap{padding:24px 16px}
+  .login-form-card h2{font-size:30px}
+  .modal-body{padding:18px 16px}
+  .modal-foot{flex-direction:column}
+  .modal-foot .btn{width:100%;margin:0}
+  .toolbar .btn{width:100%;justify-content:center;margin-top:6px}
+  .form-grid{grid-template-columns:1fr}
+  .toolbar{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<section id="loginPage" class="login-shell">
+  <div class="login-art">
+    <div class="brand-row"><div class="brand-logo"><i data-lucide="coffee"></i></div><span>WHO HR</span></div>
+    <div>
+      <h1>People operations brewed smarter.</h1>
+      <p>A modern HRMS dashboard for employees, attendance, leaves, payroll, and role planning with vibrant analytics and quick workflows.</p>
+    </div>
+    <div class="glass-card">
+      <div class="glass-grid">
+        <div class="glass-stat"><b>360°</b><span>Employee view</span></div>
+        <div class="glass-stat"><b>Live</b><span>HR analytics</span></div>
+        <div class="glass-stat"><b>Fast</b><span>Payroll runs</span></div>
+        <div class="glass-stat"><b>Clean</b><span>Team data</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="login-form-wrap">
+    <form id="loginForm" class="login-form-card">
+      <div class="brand-row" style="color:#111827;margin-bottom:28px">
+        <div class="brand-logo" style="background:linear-gradient(135deg,var(--violet),var(--indigo));color:white"><i data-lucide="coffee"></i></div>
+        <span>WHO HR</span>
+      </div>
+      <h2>Welcome back</h2>
+      <p>Sign in with your Admin account to manage your HR workspace securely.</p>
+      <div class="field"><label>Email</label><input id="loginEmail" class="input" type="email" autocomplete="email" required /></div>
+      <div class="field"><label>Password</label><input id="loginPassword" class="input" type="password" autocomplete="current-password" required /></div>
+      <button class="btn btn-primary btn-full" type="submit" id="loginBtnSubmit"><i data-lucide="log-in"></i> Sign In</button>
+    </form>
+  </div>
+</section>
+
+<section id="appPage" class="app-shell hidden">
+  <div id="sidebarOverlay" class="sidebar-overlay"></div>
+  <aside class="sidebar">
+    <div class="brand-row">
+      <div style="display:flex;gap:14px;align-items:center"><div class="brand-logo"><i data-lucide="coffee"></i></div><span>WHO HR</span></div>
+      <button class="sidebar-close" id="sidebarCloseBtn"><i data-lucide="x" style="width:18px;height:18px"></i></button>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-footer">
+      <small>Signed in securely via Supabase Auth.</small>
+      <button id="logoutBtn" class="btn btn-full"><i data-lucide="power"></i><span>Logout</span></button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="hamburgerBtn" class="hamburger" aria-label="Toggle menu">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="4" x2="20" y1="12" y2="12"></line>
+            <line x1="4" x2="20" y1="6" y2="6"></line>
+            <line x1="4" x2="20" y1="18" y2="18"></line>
+          </svg>
+        </button>
+        <div class="page-title">
+          <h1 id="pageTitle">Dashboard</h1>
+          <p id="pageSubtitle">Your people operation command center.</p>
+        </div>
+      </div>
+      <div class="user-chip">
+        <img class="avatar" alt="Admin avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E" />
+        <div><b>WHO Admin</b><br><small class="muted">HR Operations</small></div>
+      </div>
+    </header>
+    <section id="view"></section>
+  </main>
+</section>
+
+<div id="modalRoot"></div>
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ==========================================
+// 1. SUPABASE INITIALIZATION
+// ==========================================
+const SUPABASE_URL = 'https://yetjqlyamqbmrsugvfrv.supabase.co'; // <-- PASTE URL HERE
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlldGpxbHlhbXFibXJzdWd2ZnJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1Nzc0MDMsImV4cCI6MjA5OTE1MzQwM30.uw3dtZqDsuCdTYpMYQU2bdrD8alqGOVIXFBX2wReXAg'; // <-- PASTE KEY HERE
+
+// Renamed from 'supabase' to 'supabaseClient' to fix the global namespace error
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DEFAULTSTATUS=['active','inactive','onboarding','terminated','present','absent','late','approved','pending','rejected','paid','draft'];
+const POSITIONPILLS=['pill-violet','pill-green','pill-orange','pill-blue','pill-pink','pill-cyan'];
+const routes=[['dashboard','Dashboard','layout-dashboard'],['employees','Employees','users'],['departments','Departments','building-2'],
+['positions','Positions','briefcase-business'],['attendance','Attendance','calendar-check'],['leaves','Leaves','plane'],['payroll','Payroll','wallet-cards']];
+const state={route:'dashboard',departments:[],positions:[],employees:[],attendance:[],leaves:[],payroll:[],charts:{}};
+
+const meta={
+ departments:{title:'Departments',singular:'Department',icon:'building-2',dateField:'created_at',
+  fields:[{name:'name',label:'Department Name',type:'text',required:true},{name:'description',label:'Description',type:'textarea'},
+  {name:'status',label:'Status',type:'select',options:['active','inactive'],required:true}]},
+ positions:{title:'Positions',singular:'Position',icon:'briefcase-business',dateField:'created_at',
+  fields:[{name:'title',label:'Position Title',type:'text',required:true},{name:'department_id',label:'Department',type:'department'},
+  {name:'level',label:'Level',type:'select',options:['Intern','Junior','Mid','Senior','Lead','Manager','Director','Executive']},
+  {name:'status',label:'Status',type:'select',options:['active','inactive'],required:true}]},
+ employees:{title:'Employees',singular:'Employee',icon:'users',dateField:'hire_date',
+  fields:[{name:'first_name',label:'First Name',type:'text',required:true},{name:'last_name',label:'Last Name',type:'text',required:true},
+  {name:'email',label:'Email',type:'email',required:true},{name:'phone',label:'Phone',type:'text'},
+  {name:'hire_date',label:'Hire Date',type:'date'},{name:'salary',label:'Salary',type:'number'},
+  {name:'department_id',label:'Department',type:'department'},{name:'position_id',label:'Position',type:'position'},
+  {name:'status',label:'Status',type:'select',options:['active','inactive','onboarding','terminated'],required:true},
+  {name:'profile_pic',label:'Profile Picture',type:'file',full:true}]},
+ attendance:{title:'Attendance',singular:'Attendance Record',icon:'calendar-check',dateField:'date',
+  fields:[{name:'employee_id',label:'Employee',type:'employee',required:true},{name:'date',label:'Date',type:'date',required:true},
+  {name:'check_in',label:'Check In',type:'time'},{name:'check_out',label:'Check Out',type:'time'},
+  {name:'status',label:'Status',type:'select',options:['present','absent','late'],required:true}]},
+ leaves:{title:'Leaves',singular:'Leave Request',icon:'plane',dateField:'start_date',
+  fields:[{name:'employee_id',label:'Employee',type:'employee',required:true},
+  {name:'type',label:'Leave Type',type:'select',options:['annual','sick','personal','maternity','paternity','unpaid'],required:true},
+  {name:'start_date',label:'Start Date',type:'date',required:true},{name:'end_date',label:'End Date',type:'date',required:true},
+  {name:'status',label:'Status',type:'select',options:['pending','approved','rejected'],required:true},
+  {name:'reason',label:'Reason',type:'textarea',full:true}]},
+ payroll:{title:'Payroll',singular:'Payroll',icon:'wallet-cards',dateField:'pay_period',
+  fields:[{name:'employee_id',label:'Employee',type:'employee',required:true},{name:'pay_period',label:'Pay Period',type:'month',required:true},
+  {name:'basic_salary',label:'Basic Salary',type:'number',required:true},{name:'bonus',label:'Bonus',type:'number'},
+  {name:'deductions',label:'Deductions',type:'number'},{name:'net_pay',label:'Net Pay',type:'number'},
+  {name:'status',label:'Status',type:'select',options:['draft','paid','pending'],required:true}]}
+};
+
+function toast(message,danger=false){
+  const el=document.getElementById('toast');
+  el.innerHTML=`<i data-lucide="${danger?'circle-alert':'circle-check'}"></i><span>${escapeHtml(message)}</span>`;
+  el.style.background=danger?'#B91C1C':'#111827';
+  el.classList.remove('hidden'); lucide.createIcons();
+  setTimeout(()=>el.classList.add('hidden'),2800);
+}
+function escapeHtml(value){return String(value??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function money(n){return 'Rs '+Number(n||0).toLocaleString('en-IN',{maximumFractionDigits:0})}
+function formatDateDisplay(dStr){if(!dStr)return '';const parts=String(dStr).split('T')[0].split('-');if(parts.length===3)return `${parts[2]}/${parts[1]}/${parts[0]}`;return escapeHtml(dStr)}
+function human(v){return String(v??'Unassigned').replaceAll('_',' ').replace(/^./,c=>c.toUpperCase())}
+function avatarFor(name){return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'%3E%3C/path%3E%3Ccircle cx='12' cy='7' r='4'%3E%3C/circle%3E%3C/svg%3E"}
+function employeeName(emp){return emp?`${emp.first_name} ${emp.last_name}`.trim()||'Unnamed Employee':'Unknown Employee'}
+function byId(list,id){return list.find(x=>String(x.id)===String(id))}
+function departmentName(id){return byId(state.departments,id)?.name||'Unassigned'}
+function positionTitle(id){return byId(state.positions,id)?.title||'Unassigned'}
+function pillForStatus(status){
+  const s=String(status).toLowerCase();
+  if(['active','present','approved','paid'].includes(s))return 'pill-green';
+  if(['pending','onboarding','late','draft'].includes(s))return 'pill-orange';
+  if(['inactive'].includes(s))return 'pill-gray';
+  if(['terminated','absent','rejected'].includes(s))return 'pill-red';
+  return 'pill-violet';
+}
+function statusPill(status){return `<span class="pill ${pillForStatus(status)}">${human(status)}</span>`}
+function positionPill(title,i=0){return `<span class="pill ${POSITIONPILLS[i%POSITIONPILLS.length]}">${escapeHtml(title)||'Unassigned'}</span>`}
+
+/* ---------- shell / nav / hamburger ---------- */
+function renderShell(){
+  const nav=document.getElementById('nav');
+  nav.innerHTML=routes.map(([key,label,icon])=>
+    `<button class="nav-link ${state.route===key?'active':''}" data-route="${key}"><i data-lucide="${icon}"></i>${label}</button>`
+  ).join('');
+  nav.querySelectorAll('[data-route]').forEach(btn=>{
+    btn.addEventListener('click',()=>{navigate(btn.dataset.route);closeSidebar()});
+  });
+  lucide.createIcons();
+}
+
+function openSidebar(){
+  document.querySelector('.sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+  document.getElementById('hamburgerBtn').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.getElementById('hamburgerBtn').classList.remove('active');
+  document.body.style.overflow='';
+}
+function toggleSidebar(){document.querySelector('.sidebar').classList.contains('open')?closeSidebar():openSidebar();}
+document.getElementById('hamburgerBtn').onclick=toggleSidebar;
+document.getElementById('sidebarCloseBtn').onclick=closeSidebar;
+document.getElementById('sidebarOverlay').onclick=closeSidebar;
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSidebar()});
+
+/* ---------- Authentication & Boot ---------- */
+document.getElementById('loginForm').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const btn=document.getElementById('loginBtnSubmit'); const origHTML=btn.innerHTML;
+  btn.innerHTML='<span class="spinner-box"></span> Verifying...'; btn.style.pointerEvents='none';
+  
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: document.getElementById('loginEmail').value,
+    password: document.getElementById('loginPassword').value,
+  });
+
+  if (error) {
+    toast(error.message, true);
+    btn.innerHTML=origHTML; btn.style.pointerEvents='auto';
+  } else {
+    const loginEl=document.getElementById('loginPage');
+    loginEl.style.opacity=0;
+    setTimeout(async()=>{
+      btn.innerHTML=origHTML; btn.style.pointerEvents='auto';
+      await boot(true);
+    },400);
+  }
+});
+
+document.getElementById('logoutBtn').onclick=async ()=>{
+  await supabaseClient.auth.signOut();
+  closeSidebar();
+  const appEl=document.getElementById('appPage');
+  const loginEl=document.getElementById('loginPage');
+  appEl.style.opacity=0;
+  setTimeout(()=>{
+    appEl.classList.add('hidden'); appEl.style.opacity=1;
+    loginEl.classList.remove('hidden'); loginEl.style.opacity=0;
+    void loginEl.offsetWidth; loginEl.style.opacity=1;
+  },400);
+};
+
+async function boot(animatedTransition=false){
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(!session){
+    document.getElementById('loginPage').classList.remove('hidden');
+    document.getElementById('appPage').classList.add('hidden');
+    lucide.createIcons(); return;
+  }
+  
+  document.getElementById('loginPage').classList.add('hidden');
+  const appEl=document.getElementById('appPage');
+  appEl.classList.remove('hidden');
+  if(animatedTransition){appEl.style.opacity=0; void appEl.offsetWidth; appEl.style.opacity=1}
+  
+  renderShell(); await loadAll(); await navigate(state.route);
+}
+
+/* ---------- Data Fetching via Supabase ---------- */
+async function loadAll(){
+  const [{data: depts}, {data: pos}, {data: emps}, {data: att}, {data: lvs}, {data: pay}] = await Promise.all([
+    supabaseClient.from('departments').select('*').order('created_at', {ascending: false}),
+    supabaseClient.from('positions').select('*').order('created_at', {ascending: false}),
+    supabaseClient.from('employees').select('*').order('created_at', {ascending: false}),
+    supabaseClient.from('attendance').select('*').order('created_at', {ascending: false}),
+    supabaseClient.from('leaves').select('*').order('created_at', {ascending: false}),
+    supabaseClient.from('payroll').select('*').order('created_at', {ascending: false})
+  ]);
+  state.departments = depts || []; state.positions = pos || []; state.employees = emps || [];
+  state.attendance = att || []; state.leaves = lvs || []; state.payroll = pay || [];
+}
+
+async function navigate(route){
+  state.route=route; renderShell();
+  const routeMeta=route==='dashboard'?{title:'Dashboard'}:meta[route];
+  document.getElementById('pageTitle').textContent=routeMeta.title;
+  document.getElementById('pageSubtitle').textContent=route==='dashboard'
+    ?'Your people operation command center.'
+    :`Manage ${routeMeta.title.toLowerCase()} records, filters, edits, and deletions.`;
+  if(route==='dashboard') renderDashboard(); else renderEntity(route);
+}
+
+/* ---------- Frontend Analytics Aggregation ---------- */
+function getDashboardStats() {
+  const activeEmps = state.employees.filter(e => String(e.status).toLowerCase() === 'active');
+  const openPos = state.positions.filter(p => String(p.status).toLowerCase() === 'active');
+  
+  // Calculate Payroll
+  let latestPeriod = null;
+  state.payroll.forEach(p => { if(!latestPeriod || p.pay_period > latestPeriod) latestPeriod = p.pay_period; });
+  const payrollTotal = state.payroll.filter(p => p.pay_period === latestPeriod).reduce((sum, p) => sum + Number(p.net_pay || 0), 0);
+
+  // Hiring Trend (Last 6 Months)
+  const hiringTrend = { labels: [], data: [] };
+  for (let i = 5; i >= 0; i--) {
+    let d = new Date(); d.setMonth(d.getMonth() - i);
+    const mStr = d.toLocaleString('default', { month: 'short', year: 'numeric' });
+    hiringTrend.labels.push(mStr);
+    const count = state.employees.filter(e => {
+      const hd = new Date(e.hire_date || e.created_at);
+      return hd.getMonth() === d.getMonth() && hd.getFullYear() === d.getFullYear();
+    }).length;
+    hiringTrend.data.push(count);
+  }
+
+  // Department Mix
+  const deptMix = {};
+  state.employees.forEach(e => {
+    const dName = departmentName(e.department_id);
+    deptMix[dName] = (deptMix[dName] || 0) + 1;
+  });
+
+  // Attendance Trend (Last 7 Days)
+  const attTrend = { labels: [], data: [] };
+  for(let i=6; i>=0; i--) {
+    let d = new Date(); d.setDate(d.getDate() - i);
+    const dStr = d.toISOString().split('T')[0];
+    attTrend.labels.push(d.toLocaleDateString('en-GB', {day:'numeric', month:'short'}));
+    attTrend.data.push(state.attendance.filter(a => a.date === dStr && a.status === 'present').length);
+  }
+
+  // Status Breakdown
+  const statusMix = {};
+  state.employees.forEach(e => {
+    const sName = human(e.status);
+    statusMix[sName] = (statusMix[sName] || 0) + 1;
+  });
+
+  // Position Employees
+  const positionEmployees = state.employees.map(e => ({
+    employee_name: employeeName(e), email: e.email, profile_pic: e.profile_pic,
+    position_title: positionTitle(e.position_id)
+  })).sort((a, b) => a.employee_name.localeCompare(b.employee_name));
+
+  return {
+    cards: { total_employees: state.employees.length, active_employees: activeEmps.length, departments: state.departments.length, positions: openPos.length, payroll_total: payrollTotal },
+    hiring_trend: hiringTrend,
+    department_mix: { labels: Object.keys(deptMix).length ? Object.keys(deptMix) : ['No Data'], data: Object.keys(deptMix).length ? Object.values(deptMix) : [1] },
+    position_employees: positionEmployees,
+    attendance_trend: attTrend,
+    status_breakdown: { labels: Object.keys(statusMix).length ? Object.keys(statusMix) : ['No Data'], data: Object.keys(statusMix).length ? Object.values(statusMix) : [1] }
+  };
+}
+
+function renderDashboard(){
+  const view=document.getElementById('view');
+  const stats = getDashboardStats();
+  const cards=stats.cards;
+  view.innerHTML=`
+  <div class="stat-grid">
+    <div class="stat-card g-blue"><span>Total Employees</span><b>${cards.total_employees||0}</b><i data-lucide="users"></i></div>
+    <div class="stat-card g-green"><span>Active Employees</span><b>${cards.active_employees||0}</b><i data-lucide="user-check"></i></div>
+    <div class="stat-card g-orange"><span>Departments</span><b>${cards.departments||0}</b><i data-lucide="building-2"></i></div>
+    <div class="stat-card g-pink"><span>Open Positions</span><b>${cards.positions||0}</b><i data-lucide="briefcase-business"></i></div>
+    <div class="stat-card g-cyan"><span>Monthly Payroll</span><b>${money(cards.payroll_total||0)}</b><i data-lucide="wallet-cards"></i></div>
+  </div>
+  <div class="dashboard-row-2">
+    <div class="panel card"><div class="panel-head"><div><h3>Hiring Trend</h3><small>Employees hired across recent months</small></div><i data-lucide="bar-chart-3"></i></div><div class="chart-box"><canvas id="hiringChart"></canvas></div></div>
+    <div class="panel card"><div class="panel-head"><div><h3>Department Mix</h3><small>Distinct department distribution</small></div><i data-lucide="pie-chart"></i></div><div class="chart-box"><canvas id="departmentChart"></canvas></div></div>
+    <div class="panel card"><div class="panel-head"><div><h3>Employees by Position</h3><small>Scrollable assigned position list</small></div><i data-lucide="list-tree"></i></div>
+      <div class="position-list">${stats.position_employees.map((row,i)=>`
+        <div class="employee-line">
+          <img class="avatar avatar-sm" src="${escapeHtml(row.profile_pic)||avatarFor(row.employee_name)}" alt="" />
+          <div style="flex:1;min-width:0"><strong>${escapeHtml(row.employee_name)}</strong><small>${escapeHtml(row.email)}</small></div>
+          ${positionPill(row.position_title,i)}
+        </div>`).join('')||'<div class="empty">No assigned employees yet.</div>'}
+      </div>
+    </div>
+  </div>
+  <div class="dashboard-row-3">
+    <div class="panel card"><div class="panel-head"><div><h3>Attendance Trend</h3><small>Present check-ins over the latest dates</small></div><i data-lucide="activity"></i></div><div class="chart-box"><canvas id="attendanceChart"></canvas></div></div>
+    <div class="panel card"><div class="panel-head"><div><h3>Status Breakdown</h3><small>Employee status composition</small></div><i data-lucide="badge-check"></i></div><div class="chart-box"><canvas id="statusChart"></canvas></div></div>
+  </div>`;
+  destroyCharts();
+  const varied=['#7C3AED','#10B981','#F97316','#EC4899','#06B6D4','#F59E0B','#2563EB','#EF4444'];
+  const hiringTrend=stats.hiring_trend;
+  const hiringMax=Math.max(1,...hiringTrend.data||[0]);
+  state.charts.hiring=new Chart(document.getElementById('hiringChart'),{type:'bar',
+    data:{labels:hiringTrend.labels,datasets:[{label:'Hires',data:hiringTrend.data,backgroundColor:['#7C3AED','#4F46E5','#2563EB','#06B6D4','#10B981','#F97316'],borderRadius:12,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'Hires: '+ctx.raw}}},scales:{y:{beginAtZero:true,suggestedMax:hiringMax+1,ticks:{precision:0}},x:{grid:{display:false}}}}});
+  state.charts.department=new Chart(document.getElementById('departmentChart'),{type:'doughnut',
+    data:{labels:stats.department_mix.labels,datasets:[{data:stats.department_mix.data,backgroundColor:varied,borderWidth:4,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  state.charts.attendance=new Chart(document.getElementById('attendanceChart'),{type:'line',
+    data:{labels:stats.attendance_trend.labels,datasets:[{label:'Present',data:stats.attendance_trend.data,borderColor:'#4F46E5',backgroundColor:'rgba(79,70,229,.12)',tension:.42,fill:true,pointRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+  state.charts.status=new Chart(document.getElementById('statusChart'),{type:'doughnut',
+    data:{labels:stats.status_breakdown.labels,datasets:[{data:stats.status_breakdown.data,backgroundColor:['#10B981','#F59E0B','#6B7280','#EF4444','#06B6D4'],borderWidth:4,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});
+  lucide.createIcons();
+}
+function destroyCharts(){Object.values(state.charts).forEach(ch=>ch&&ch.destroy());state.charts={}}
+
+function renderEntity(entity){
+  const m=meta[entity];
+  const view=document.getElementById('view');
+  view.innerHTML=`
+  <div class="toolbar card">
+    <div class="field" style="margin:0"><label>Search ${m.title}</label><input id="searchBox" class="input" placeholder="Search names, status, email, dates" /></div>
+    <div class="field" style="margin:0"><label>Status Filter</label><select id="statusFilter" class="select"><option value="">All statuses</option>${statusOptionsFor(entity).map(s=>`<option value="${escapeHtml(s)}">${human(s)}</option>`).join('')}</select></div>
+    <div class="field" style="margin:0"><label>Department Filter</label><select id="departmentFilter" class="select"><option value="">All departments</option>${state.departments.map(d=>`<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('')}</select></div>
+    <div class="field" style="margin:0"><label>Date From</label><input id="dateFrom" class="input" type="date" /></div>
+    <button class="btn btn-primary" id="addBtn"><i data-lucide="plus"></i> Add ${m.singular}</button>
+  </div>
+  <div class="table-card card"><div class="table-wrap"><table><thead>${tableHead(entity)}</thead><tbody id="tableBody"></tbody></table></div></div>`;
+  ['searchBox','statusFilter','departmentFilter','dateFrom'].forEach(id=>document.getElementById(id).addEventListener('input',()=>fillTable(entity)));
+  document.getElementById('addBtn').onclick=()=>openForm(entity);
+  fillTable(entity); lucide.createIcons();
+}
+function statusOptionsFor(entity){
+  const configured=meta[entity].fields.find(f=>f.name==='status')?.options||DEFAULTSTATUS;
+  const actual=[...new Set(state[entity].map(x=>x.status).filter(Boolean))];
+  return [...new Set([...configured,...actual])];
+}
+function filteredRows(entity){
+  const q=document.getElementById('searchBox')?.value.trim().toLowerCase()||'';
+  const status=document.getElementById('statusFilter')?.value||'';
+  const dept=document.getElementById('departmentFilter')?.value||'';
+  const dateFrom=document.getElementById('dateFrom')?.value||'';
+  const dateField=meta[entity].dateField;
+  return state[entity].filter(row=>{
+    let text=JSON.stringify(row).toLowerCase();
+    if(entity==='employees')text+=departmentName(row.department_id).toLowerCase()+positionTitle(row.position_id).toLowerCase();
+    if(['attendance','leaves','payroll'].includes(entity))text+=employeeName(byId(state.employees,row.employee_id)).toLowerCase();
+    if(entity==='positions')text+=departmentName(row.department_id).toLowerCase();
+    const matchesSearch=!q||text.includes(q);
+    const matchesStatus=!status||String(row.status)===status;
+    const matchesDept=!dept||String(row.department_id||byId(state.employees,row.employee_id)?.department_id)===String(dept);
+    const matchesDate=!dateFrom||String(row[dateField]).slice(0,10)>=dateFrom;
+    return matchesSearch&&matchesStatus&&matchesDept&&matchesDate;
+  });
+}
+function tableHead(entity){
+  const heads={departments:['Department','Description','Status','Employees','Actions'],
+   positions:['Position','Department','Level','Status','Assigned Employees','Actions'],
+   employees:['Employee','Contact','Department','Position','Salary','Status','Actions'],
+   attendance:['Employee','Date','Check In','Check Out','Status','Actions'],
+   leaves:['Employee','Type','Dates','Status','Reason','Actions'],
+   payroll:['Employee','Period','Basic','Bonus','Deductions','Net Pay','Status','Actions']}[entity];
+  return `<tr>${heads.map((h,i)=>`<th class="${i===heads.length-1?'right':''}">${h}</th>`).join('')}</tr>`;
+}
+function fillTable(entity){
+  const body=document.getElementById('tableBody');
+  const rows=filteredRows(entity);
+  if(!rows.length){body.innerHTML=`<tr><td colspan="9"><div class="empty">No ${meta[entity].title.toLowerCase()} found.</div></td></tr>`;return}
+  body.innerHTML=rows.map(row=>tableRow(entity,row)).join('');
+  body.querySelectorAll('[data-edit]').forEach(btn=>btn.onclick=()=>openForm(entity,byId(state[entity],btn.dataset.edit)));
+  body.querySelectorAll('[data-delete]').forEach(btn=>btn.onclick=()=>confirmDelete(entity,btn.dataset.delete));
+  body.querySelectorAll('[data-assign]').forEach(btn=>btn.onclick=()=>openAssignModal(btn.dataset.assign));
+  lucide.createIcons();
+}
+function tableRow(entity,row){
+  const actions=`<div class="row-actions">
+    ${entity==='positions'?`<button class="btn btn-soft btn-icon" title="Assign Employee" data-assign="${row.id}"><i data-lucide="user-plus"></i></button>`:''}
+    <button class="btn btn-ghost btn-icon" title="Edit" data-edit="${row.id}"><i data-lucide="pencil"></i></button>
+    <button class="btn btn-danger btn-icon" title="Delete" data-delete="${row.id}"><i data-lucide="trash-2"></i></button>
+  </div>`;
+  if(entity==='departments'){
+    const count=state.employees.filter(e=>String(e.department_id)===String(row.id)).length;
+    return `<tr><td><b>${escapeHtml(row.name)}</b></td><td>${escapeHtml(row.description)}</td><td>${statusPill(row.status)}</td><td>${count}</td><td>${actions}</td></tr>`;
+  }
+  if(entity==='positions'){
+    const assigned=state.employees.filter(e=>String(e.position_id)===String(row.id));
+    return `<tr><td><b>${escapeHtml(row.title)}</b></td><td>${escapeHtml(departmentName(row.department_id))}</td><td>${escapeHtml(row.level)}</td><td>${statusPill(row.status)}</td>
+    <td><div class="assigned-list">${assigned.map((e,i)=>positionPill(employeeName(e),i)).join('')||'<span class="muted">No employees assigned</span>'}</div></td><td>${actions}</td></tr>`;
+  }
+  if(entity==='employees'){
+    return `<tr><td><div class="employee-line" style="padding:0;border:0;background:transparent">
+      <img class="avatar avatar-sm" src="${escapeHtml(row.profile_pic)||avatarFor(employeeName(row))}" alt="" />
+      <div><b>${escapeHtml(employeeName(row))}</b><br><small class="muted">${escapeHtml(row.email)}</small></div></div></td>
+      <td>${escapeHtml(row.phone)}</td><td>${escapeHtml(departmentName(row.department_id))}</td><td>${positionPill(positionTitle(row.position_id),0)}</td>
+      <td>${money(row.salary)}</td><td>${statusPill(row.status)}</td><td>${actions}</td></tr>`;
+  }
+  if(entity==='attendance'){
+    const e=byId(state.employees,row.employee_id);
+    return `<tr><td><b>${escapeHtml(employeeName(e))}</b></td><td>${formatDateDisplay(row.date)}</td><td>${escapeHtml(row.check_in)}</td><td>${escapeHtml(row.check_out)}</td><td>${statusPill(row.status)}</td><td>${actions}</td></tr>`;
+  }
+  if(entity==='leaves'){
+    const e=byId(state.employees,row.employee_id);
+    return `<tr><td><b>${escapeHtml(employeeName(e))}</b></td><td>${escapeHtml(human(row.type))}</td><td>${formatDateDisplay(row.start_date)} - ${formatDateDisplay(row.end_date)}</td><td>${statusPill(row.status)}</td><td>${escapeHtml(row.reason)}</td><td>${actions}</td></tr>`;
+  }
+  const e=byId(state.employees,row.employee_id);
+  return `<tr><td><b>${escapeHtml(employeeName(e))}</b></td><td>${escapeHtml(row.pay_period)}</td><td>${money(row.basic_salary)}</td><td>${money(row.bonus)}</td><td>${money(row.deductions)}</td><td><b>${money(row.net_pay)}</b></td><td>${statusPill(row.status)}</td><td>${actions}</td></tr>`;
+}
+function optionList(type,selected){
+  if(type==='department')return `<option value="">Unassigned</option>${state.departments.map(d=>`<option value="${d.id}" ${String(selected)===String(d.id)?'selected':''}>${escapeHtml(d.name)}</option>`).join('')}`;
+  if(type==='position')return `<option value="">Unassigned</option>${state.positions.map(p=>`<option value="${p.id}" ${String(selected)===String(p.id)?'selected':''}>${escapeHtml(p.title)}</option>`).join('')}`;
+  if(type==='employee')return `<option value="">Select employee</option>${state.employees.map(e=>`<option value="${e.id}" ${String(selected)===String(e.id)?'selected':''}>${escapeHtml(employeeName(e))}</option>`).join('')}`;
+  return '';
+}
+function formControl(field,item){
+  const value=item?.[field.name]??'';
+  const required=field.required?'required':'';
+  const cls=field.full?'field full':'field';
+  if(field.type==='textarea')return `<div class="${cls}"><label>${field.label}</label><textarea class="textarea" name="${field.name}" ${required}>${escapeHtml(value)}</textarea></div>`;
+  if(field.type==='select')return `<div class="${cls}"><label>${field.label}</label><select class="select" name="${field.name}" ${required}>${field.options.map(opt=>`<option value="${opt}" ${String(value)===opt||field.options[0]===opt&&!value?'selected':''}>${human(opt)}</option>`).join('')}</select></div>`;
+  if(['department','position','employee'].includes(field.type))return `<div class="${cls}"><label>${field.label}</label><select class="select" name="${field.name}" ${required}>${optionList(field.type,value)}</select></div>`;
+  if(field.type==='file'){
+    const currentPic=item?.profile_pic||avatarFor(item?employeeName(item):'New Employee');
+    return `<div class="${cls}"><label>${field.label}</label><div class="preview-row"><img id="profilePreview" class="avatar-lg" src="${escapeHtml(currentPic)}" alt="Profile preview" /><div style="flex:1"><input id="profileFile" class="input" type="file" accept="image/*" /><small class="muted">Images are resized client-side to max 200x200 using Canvas before Base64 upload.</small></div></div></div>`;
+  }
+  return `<div class="${cls}"><label>${field.label}</label><input class="input" name="${field.name}" type="${field.type}" value="${escapeHtml(value)}" ${required} /></div>`;
+}
+
+function openForm(entity,item=null){
+  const m=meta[entity]; const isEdit=Boolean(item); let resizedProfilePic=null;
+  openModal({
+    title:isEdit?`Edit ${m.singular}`:`Add ${m.singular}`,
+    body:`<form id="entityForm" class="form-grid">${m.fields.map(f=>formControl(f,item)).join('')}</form>`,
+    footer:`<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-primary" id="saveBtn"><i data-lucide="save"></i><span>${isEdit?'Save Changes':'Create Record'}</span></button>`
+  });
+  const profileFile=document.getElementById('profileFile');
+  if(profileFile){
+    profileFile.addEventListener('change',async e=>{
+      const file=e.target.files[0]; if(!file)return;
+      resizedProfilePic=await resizeImage(file,200,200);
+      document.getElementById('profilePreview').src=resizedProfilePic;
+    });
+  }
+  if(entity==='payroll')wirePayrollAutoFill();
+  
+  document.getElementById('saveBtn').onclick=async e=>{
+    const form=document.getElementById('entityForm'); if(!form.reportValidity())return;
+    const btn=e.currentTarget; const origHTML=btn.innerHTML;
+    btn.innerHTML='<span class="spinner-box"></span><span>Saving...</span>'; btn.style.pointerEvents='none';
+    const payload={}; const data=new FormData(form);
+    for(const [key,value] of data.entries())payload[key]=value||null;
+    
+    if(entity==='employees'){
+      if(resizedProfilePic)payload.profile_pic=resizedProfilePic;
+      else if(!isEdit)payload.profile_pic=avatarFor(`${payload.first_name} ${payload.last_name}`);
+    }
+    if(entity==='payroll'){
+      payload.basic_salary=Number(payload.basic_salary||0); payload.bonus=Number(payload.bonus||0);
+      payload.deductions=Number(payload.deductions||0); payload.net_pay=Number(payload.net_pay||0);
+    }
+    if(entity==='employees')payload.salary=Number(payload.salary||0);
+    
+    try{
+      let error;
+      if(isEdit){
+         const res = await supabaseClient.from(entity).update(payload).eq('id', item.id);
+         error = res.error;
+      } else {
+         const res = await supabaseClient.from(entity).insert([payload]);
+         error = res.error;
+      }
+      
+      if(error) throw error;
+
+      closeModal(); await loadAll();
+      if(state.route==='dashboard') renderDashboard(); else renderEntity(entity);
+      toast(`${m.singular} ${isEdit?'updated':'created'} successfully`);
+    }catch(err){toast(err.message,true);btn.innerHTML=origHTML;btn.style.pointerEvents='auto'}
+  };
+  lucide.createIcons();
+}
+
+function wirePayrollAutoFill(){
+  const form=document.getElementById('entityForm');
+  const empSelect=form.querySelector('[name=employee_id]'); const basic=form.querySelector('[name=basic_salary]');
+  const bonus=form.querySelector('[name=bonus]'); const deductions=form.querySelector('[name=deductions]'); const net=form.querySelector('[name=net_pay]');
+  const recalc=()=>{net.value=(Number(basic.value||0)+Number(bonus.value||0)-Number(deductions.value||0)).toFixed(2)};
+  empSelect.addEventListener('change',()=>{const emp=byId(state.employees,empSelect.value); if(emp)basic.value=Number(emp.salary||0); recalc()});
+  [basic,bonus,deductions].forEach(inp=>inp.addEventListener('input',recalc));
+}
+function resizeImage(file,maxWidth,maxHeight){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader(); reader.onerror=reject;
+    reader.onload=e=>{
+      const img=new Image(); img.onerror=reject;
+      img.onload=()=>{
+        let width=img.width,height=img.height;
+        const ratio=Math.min(maxWidth/width,maxHeight/height,1);
+        width=Math.round(width*ratio); height=Math.round(height*ratio);
+        const canvas=document.createElement('canvas'); canvas.width=width; canvas.height=height;
+        const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,width,height);
+        resolve(canvas.toDataURL('image/jpeg',.86));
+      };
+      img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function openAssignModal(positionId){
+  const position=byId(state.positions,positionId);
+  openModal({
+    title:`Assign Employee to ${position?.title||'Position'}`,
+    body:`<div class="field"><label>Employee</label><select id="assignEmployeeSelect" class="select">${optionList('employee')}</select></div><p class="muted">This performs a partial update on the employee record and only changes <code>position_id</code>.</p>`,
+    footer:`<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-primary" id="assignBtn"><i data-lucide="user-plus"></i>Assign Employee</button>`
+  });
+  document.getElementById('assignBtn').onclick=async e=>{
+    const employeeId=document.getElementById('assignEmployeeSelect').value;
+    if(!employeeId){toast('Select an employee to assign',true);return}
+    const btn=e.currentTarget; const origHTML=btn.innerHTML;
+    btn.innerHTML='<span class="spinner-box"></span> Assigning...'; btn.style.pointerEvents='none';
+    try{
+      const {error} = await supabaseClient.from('employees').update({position_id:positionId}).eq('id', employeeId);
+      if(error) throw error;
+      
+      closeModal(); await loadAll(); renderEntity('positions');
+      toast('Employee assigned successfully');
+    }catch(err){toast(err.message,true);btn.innerHTML=origHTML;btn.style.pointerEvents='auto'}
+  };
+  lucide.createIcons();
+}
+
+function confirmDelete(entity,id){
+  const m=meta[entity];
+  openModal({
+    title:`Delete ${m.singular}`,
+    body:`<p>Are you sure you want to delete this ${m.singular.toLowerCase()}? This action cannot be undone.</p>`,
+    footer:`<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-danger" id="deleteBtn"><i data-lucide="trash-2"></i>Delete</button>`
+  });
+  document.getElementById('deleteBtn').onclick=async e=>{
+    const btn=e.currentTarget; const origHTML=btn.innerHTML;
+    btn.innerHTML='<span class="spinner-box"></span> Deleting...'; btn.style.pointerEvents='none';
+    try{
+      const {error} = await supabaseClient.from(entity).delete().eq('id', id);
+      if(error) throw error;
+
+      closeModal(); await loadAll(); renderEntity(entity); toast(`${m.singular} deleted`);
+    }catch(err){toast(err.message,true);btn.innerHTML=origHTML;btn.style.pointerEvents='auto'}
+  };
+  lucide.createIcons();
+}
+function openModal({title,body,footer}){
+  document.getElementById('modalRoot').innerHTML=`
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-head"><h3>${escapeHtml(title)}</h3><button class="btn btn-ghost btn-icon" data-close><i data-lucide="x"></i></button></div>
+      <div class="modal-body">${body}</div>
+      <div class="modal-foot">${footer}</div>
+    </div>
+  </div>`;
+  document.querySelectorAll('[data-close]').forEach(btn=>btn.onclick=closeModal);
+  document.getElementById('modalBackdrop').addEventListener('click',e=>{if(e.target.id==='modalBackdrop')closeModal()});
+  lucide.createIcons();
+}
+function closeModal(){document.getElementById('modalRoot').innerHTML=''}
+
+boot(); // Initial start
+</script>
+</body>
+</html>
